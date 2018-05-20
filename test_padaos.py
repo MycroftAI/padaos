@@ -30,3 +30,18 @@ class TestIntentContainer:
         assert self.container.calc_intent('eat some bananas') == {
             'name': 'eat', 'entities': {'fruit': 'bananas'}
         }
+
+    def test_case(self):
+        self.container.add_intent('test', 'Testing cAPitalizAtion')
+        assert self.container.calc_intent('teStiNg CapitalIzation')['name'] == 'test'
+
+    def test_punctuation(self):
+        self.container.add_intent('test', 'Test! Of: Punctuation')
+        assert self.container.calc_intent('test of !punctuation...')['name'] == 'test'
+
+    def test_spaces(self):
+        self.container.add_intent('test', ['this is a test'])
+        assert self.container.calc_intent('thisisatest')['name'] is None
+        self.container.add_intent('test2', ['this has(one|two)options'])
+        assert self.container.calc_intent('this has two options')['name'] == 'test2'
+        assert self.container.calc_intent('th is is a test')['name'] is None
