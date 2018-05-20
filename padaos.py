@@ -81,17 +81,19 @@ class IntentContainer:
         }
         self.must_compile = False
 
-    def calc_intent(self, query):
+    def calc_intents(self, query):
         if self.must_compile:
             self.compile()
-        results = []
         for intent_name, intent in self.intents.items():
             match = intent.match(query)
             if match:
-                results.append({'name': intent_name, 'entities': {
+                yield {'name': intent_name, 'entities': {
                     k.rsplit('__', 1)[0]: v for k, v in match.groupdict().items() if v
-                }})
+                }}
+
+    def calc_intent(self, query):
         return min(
-            results, key=lambda x: sum(map(len, x['entities'].values())),
+            self.calc_intents(query),
+            key=lambda x: sum(map(len, x['entities'].values())),
             default={'name': None, 'entities': {}}
         )
