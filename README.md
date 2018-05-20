@@ -30,5 +30,31 @@ container.calc_intent('find cats using xyz')
 
 ## How it works
 
-Padaos is nothing more than a converter between a series of example sentences and
+Padaos converts a series of example sentences into
 one big chunk of regex. Each intent is a single compiled regex matcher.
+Here's a fex examples of the input example and the output regex.
+
+```
+This is a test
+->
+\W*This\W+is\W+a\W+test\W*
+```
+
+```
+Eat an (apple|orange).
+->
+\W*Eat\W+an\W*(\W*apple\W*|\W*orange\W*)\.?\W*
+```
+
+```
+Hello!
+Hi!
+->
+(\W*Hello\W*\!?\W*|\W*Hi\W*\!?\W*)
+```
+
+```
+This is something (inside parentheses)
+->
+(\W*This\W+is\W+something\W*\(?\W*inside\W+parentheses\W*\)?\W*)
+```
