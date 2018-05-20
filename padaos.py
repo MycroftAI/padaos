@@ -63,6 +63,11 @@ class IntentContainer:
             self.i += 1
         return line
 
+    def create_regex(self, lines):
+        return r'({})'.format('|'.join(
+            self._create_intent_pattern(line) for line in sorted(lines, key=len, reverse=True)
+        ))
+
     def compile(self):
         self.entities = {
             ent_name: r'({})'.format('|'.join(
@@ -71,9 +76,7 @@ class IntentContainer:
             for ent_name, lines in self.entity_lines.items()
         }
         self.intents = {
-            intent_name: re.compile(r'({})'.format('|'.join(
-                self._create_intent_pattern(line) for line in sorted(lines, key=len, reverse=True)
-            )), re.IGNORECASE)
+            intent_name: re.compile(self.create_regex(lines), re.IGNORECASE)
             for intent_name, lines in self.intent_lines.items()
         }
         self.must_compile = False
