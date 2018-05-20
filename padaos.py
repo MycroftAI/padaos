@@ -41,8 +41,9 @@ class IntentContainer:
                 (r'(\w)([^\w\s}])', r'\1 \2'),
                 (r'([^\w\s{])(\w)', r'\1 \2'),
                 (r' {} '.format, None),
-                (r'(\w)\s+(\w)', r'\1\\s+\2'),
-                (r'\s+', r'\\s*')
+                (r'(\\[^\w ])', r'\1?'),
+                (r'(?<=\w)(\\\s|\s)+(?=\w)', r'\\W+'),
+                (r'\s+', r'\\W*')
         ):
             if callable(pat):
                 line = pat(line)
