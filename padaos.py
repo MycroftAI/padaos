@@ -43,7 +43,9 @@ class IntentContainer:
                 (r' {} '.format, None),
                 (r'(\\[^\w ])', r'\1?'),
                 (r'(?<=\w)(\\\s|\s)+(?=\w)', r'\\W+'),
-                (r'\s+', r'\\W*')
+                (r'\s+', r'\\W*'),
+                (r'\d', r'\\d'),
+                (r':0', r'\w+')
         ):
             if callable(pat):
                 line = pat(line)
@@ -65,13 +67,15 @@ class IntentContainer:
 
     def create_regex(self, lines):
         return r'({})'.format('|'.join(
-            self._create_intent_pattern(line) for line in sorted(lines, key=len, reverse=True)
+            self._create_intent_pattern(line)
+            for line in sorted(lines, key=len, reverse=True)
+            if line.strip()
         ))
 
     def compile(self):
         self.entities = {
             ent_name: r'({})'.format('|'.join(
-                self._create_pattern(line) for line in lines
+                self._create_pattern(line) for line in lines if line.strip()
             ))
             for ent_name, lines in self.entity_lines.items()
         }
