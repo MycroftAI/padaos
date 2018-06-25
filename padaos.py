@@ -28,24 +28,44 @@ class IntentContainer:
 
     def _create_pattern(self, line):
         for pat, rep in (
-                (r'\(([^\|)]*)\)', r'{~(\1)~}'),
-                (re.escape, None),
-                (r'\\ ', r' '),
-                (r'(?<!\\{\\~)\\\(', r'('),
-                (r'\\\)(?!\\~\\})', r')'),
-                (r'\\{\\~\\\(', r'\\('),
-                (r'\\\)\\~\\}', r'\\)'),
-                (r'\\\|', r'|'),
-                (r'\\{', '{'),
-                (r'\\}', '}'),
-                (r'(\w)([^\w\s}])', r'\1 \2'),
-                (r'([^\w\s{])(\w)', r'\1 \2'),
-                (r' {} '.format, None),
+                # === Preserve Plain Parentheses ===
+                (r'\(([^\|)]*)\)', r'{~(\1)~}'),  # (hi) -> {~(hi)~}
+
+                # === Convert to regex literal ===
+                (re.escape, None),  # a b:c -> a\ b\:c
+                (r' {} '.format, None),  # 'abc' -> ' abc '
+
+                # === Unescape Chars for Convenience ===
+                (r'\\ ', r' '),  # "\ " -> " "
+                (r'\\{', r'{'),  # \{ -> {
+                (r'\\}', r'}'),  # \} -> }
+                (r'\\:', r':'),  # \: -> :
+                (r'\\#', r'#'),  # \# -> #
+
+                # === Support Parentheses Expansion ===
+                (r'(?<!\\{\\~)\\\(', r'('),  # \( -> (  ignoring  \{\~\(
+                (r'\\\)(?!\\~\\})', r')'),  # \) -> )  ignoring  \)\~\}
+                (r'\\{\\~\\\(', r'\\('),  # \{\~\( -> \(
+                (r'\\\)\\~\\}', r'\\)'),  # \)\~\}  -> \)
+                (r'\\\|', r'|'),  # \| -> |
+
+                # === Support Special Symbols ===
+                (r'(?<=\s):0(?=\s)', r'\w+'),
+                (r'#', r'\d'),
+                (r'\d', r'\d'),
+
+                # === Space Word Separations ===
+                (r'(?<!\\)(\w)([^\w\s}])', r'\1 \2'),  # a:b -> a :b
+                (r'([^\\\w\s{])(\w)', r'\1 \2'),  # a :b -> a : b
+
+                # === Make Symbols Optional ===
                 (r'(\\[^\w ])', r'\1?'),
+
+                # === Force 1+ Space Between Words ===
                 (r'(?<=\w)(\\\s|\s)+(?=\w)', r'\\W+'),
+
+                # === Force 0+ Space Between Everything Else ===
                 (r'\s+', r'\\W*'),
-                (r'\d', r'\\d'),
-                (r':0', r'\w+')
         ):
             if callable(pat):
                 line = pat(line)
@@ -53,21 +73,28 @@ class IntentContainer:
                 line = re.sub(pat, rep, line)
         return line
 
-    def _create_intent_pattern(self, line):
+    def _create_intent_pattern(self, line, intent_name):
+        namespace = intent_name.split(':')[0] + ':'
         line = self._create_pattern(line)
         replacements = {}
-        for ent_name in set(re.findall(r'{([a-z_]+)}', line)):
+        for ent_name in set(re.findall(r'{([a-z_:]+)}', line)):
             replacements[ent_name] = r'(?P<{}__{{}}>.*)'.format(ent_name)
         for ent_name, ent in self.entities.items():
-            replacements[ent_name] = r'(?P<{}__{{}}>{})'.format(ent_name, ent)
+            ent_regex = r'(?P<{}__{{}}>{})'
+            if ent_name.startswith(namespace):
+                replacements[ent_name[len(namespace):]] = ent_regex.format(
+                    ent_name[len(namespace):], ent
+                )
+            else:
+                replacements[ent_name] = ent_regex.format(ent_name.replace(':', '__colon__'), ent)
         for key, value in replacements.items():
             line = line.replace('{' + key + '}', value.format(self.i), 1)
             self.i += 1
         return line
 
-    def create_regex(self, lines):
+    def create_regex(self, lines, intent_name):
         return r'({})'.format('|'.join(
-            self._create_intent_pattern(line)
+            self._create_intent_pattern(line, intent_name)
             for line in sorted(lines, key=len, reverse=True)
             if line.strip()
         ))
@@ -80,7 +107,7 @@ class IntentContainer:
             for ent_name, lines in self.entity_lines.items()
         }
         self.intents = {
-            intent_name: re.compile(self.create_regex(lines), re.IGNORECASE)
+            intent_name: re.compile(self.create_regex(lines, intent_name), re.IGNORECASE)
             for intent_name, lines in self.intent_lines.items()
         }
         self.must_compile = False
@@ -92,7 +119,8 @@ class IntentContainer:
             match = intent.match(query)
             if match:
                 yield {'name': intent_name, 'entities': {
-                    k.rsplit('__', 1)[0]: v for k, v in match.groupdict().items() if v
+                    k.rsplit('__', 1)[0].replace('__colon__', ':'): v.strip()
+                    for k, v in match.groupdict().items() if v
                 }}
 
     def calc_intent(self, query):
