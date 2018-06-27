@@ -92,12 +92,12 @@ class IntentContainer:
             self.i += 1
         return line
 
-    def create_regex(self, lines, intent_name):
-        return r'({})'.format('|'.join(
-            self._create_intent_pattern(line, intent_name)
+    def create_regexes(self, lines, intent_name):
+        return [
+            re.compile(self._create_intent_pattern(line, intent_name), re.IGNORECASE)
             for line in sorted(lines, key=len, reverse=True)
             if line.strip()
-        ))
+        ]
 
     def compile(self):
         self.entities = {
@@ -107,21 +107,30 @@ class IntentContainer:
             for ent_name, lines in self.entity_lines.items()
         }
         self.intents = {
-            intent_name: re.compile(self.create_regex(lines, intent_name), re.IGNORECASE)
+            intent_name: self.create_regexes(lines, intent_name)
             for intent_name, lines in self.intent_lines.items()
         }
         self.must_compile = False
 
+    def _calc_entities(self, query, regexes):
+        for regex in regexes:
+            match = regex.match(query)
+            if match:
+                yield {
+                    k.rsplit('__', 1)[0].replace('__colon__', ':'): v.strip()
+                    for k, v in match.groupdict().items() if v
+                }
+
     def calc_intents(self, query):
         if self.must_compile:
             self.compile()
-        for intent_name, intent in self.intents.items():
-            match = intent.match(query)
-            if match:
-                yield {'name': intent_name, 'entities': {
-                    k.rsplit('__', 1)[0].replace('__colon__', ':'): v.strip()
-                    for k, v in match.groupdict().items() if v
-                }}
+        for intent_name, regexes in self.intents.items():
+            entities = list(self._calc_entities(query, regexes))
+            if entities:
+                yield {
+                    'name': intent_name,
+                    'entities': min(entities, key=lambda x: sum(map(len, x.values())))
+                }
 
     def calc_intent(self, query):
         return min(
