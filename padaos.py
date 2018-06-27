@@ -39,7 +39,6 @@ class IntentContainer:
                 (r'\\ ', r' '),  # "\ " -> " "
                 (r'\\{', r'{'),  # \{ -> {
                 (r'\\}', r'}'),  # \} -> }
-                (r'\\:', r':'),  # \: -> :
                 (r'\\#', r'#'),  # \# -> #
 
                 # === Support Parentheses Expansion ===
@@ -50,7 +49,7 @@ class IntentContainer:
                 (r'\\\|', r'|'),  # \| -> |
 
                 # === Support Special Symbols ===
-                (r'(?<=\s):0(?=\s)', r'\w+'),
+                (r'(?<=\s)\\:0(?=\s)', r'\w+'),
                 (r'#', r'\d'),
                 (r'\d', r'\d'),
 
@@ -78,7 +77,7 @@ class IntentContainer:
         line = self._create_pattern(line)
         replacements = {}
         for ent_name in set(re.findall(r'{([a-z_:]+)}', line)):
-            replacements[ent_name] = r'(?P<{}__{{}}>.*)'.format(ent_name)
+            replacements[ent_name] = r'(?P<{}__{{}}>.*?\w.*?)'.format(ent_name)
         for ent_name, ent in self.entities.items():
             ent_regex = r'(?P<{}__{{}}>{})'
             if ent_name.startswith(namespace):
@@ -90,7 +89,8 @@ class IntentContainer:
         for key, value in replacements.items():
             line = line.replace('{' + key + '}', value.format(self.i), 1)
             self.i += 1
-        return line
+        print(intent_name, line)
+        return '^{}$'.format(line)
 
     def create_regexes(self, lines, intent_name):
         return [

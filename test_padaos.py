@@ -32,11 +32,11 @@ class TestIntentContainer:
         }
 
     def test_case(self):
-        self.container.add_intent('test', 'Testing cAPitalizAtion')
+        self.container.add_intent('test', ['Testing cAPitalizAtion'])
         assert self.container.calc_intent('teStiNg CapitalIzation')['name'] == 'test'
 
     def test_punctuation(self):
-        self.container.add_intent('test', 'Test! Of: Punctuation')
+        self.container.add_intent('test', ['Test! Of: Punctuation'])
         assert self.container.calc_intent('test of !punctuation...')['name'] == 'test'
 
     def test_spaces(self):
