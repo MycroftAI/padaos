@@ -61,7 +61,7 @@ class IntentContainer:
                 (r'(\\[^\w ])', r'\1?'),
 
                 # === Force 1+ Space Between Words ===
-                (r'(?<=\w)(\\\s|\s)+(?=\w)', r'\\W+'),
+                (r'(?<=\w)(\\\s|\s)+', r'\\W+'),
 
                 # === Force 0+ Space Between Everything Else ===
                 (r'\s+', r'\\W*'),
@@ -121,6 +121,7 @@ class IntentContainer:
                 }
 
     def calc_intents(self, query):
+        query = ' ' + query + ' '
         if self.must_compile:
             self.compile()
         for intent_name, regexes in self.intents.items():
