@@ -89,7 +89,6 @@ class IntentContainer:
         for key, value in replacements.items():
             line = line.replace('{' + key + '}', value.format(self.i), 1)
             self.i += 1
-        print(intent_name, line)
         return '^{}$'.format(line)
 
     def create_regexes(self, lines, intent_name):
