@@ -32,7 +32,7 @@ class IntentContainer:
                 (r'\(([^\|)]*)\)', r'{~(\1)~}'),  # (hi) -> {~(hi)~}
 
                 # === Convert to regex literal ===
-                (re.escape, None),  # a b:c -> a\ b\:c
+                (r'(\W)', r'\\\1'),
                 (r' {} '.format, None),  # 'abc' -> ' abc '
 
                 # === Unescape Chars for Convenience ===
@@ -49,9 +49,9 @@ class IntentContainer:
                 (r'\\\|', r'|'),  # \| -> |
 
                 # === Support Special Symbols ===
-                (r'(?<=\s)\\:0(?=\s)', r'\w+'),
-                (r'#', r'\d'),
-                (r'\d', r'\d'),
+                (r'(?<=\s)\\:0(?=\s)', r'\\w+'),
+                (r'#', r'\\d'),
+                (r'\d', r'\\d'),
 
                 # === Space Word Separations ===
                 (r'(?<!\\)(\w)([^\w\s}])', r'\1 \2'),  # a:b -> a :b
