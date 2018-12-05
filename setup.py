@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='padaos',
-    version='0.1.7',
+    version='0.1.8',
     description='A rigid, lightweight, dead-simple intent parser',
     url='http://github.com/MatthewScholefield/padaos',
     author='Matthew Scholefield',
