@@ -1,5 +1,9 @@
 import re
+import sre_constants
+import logging
 
+
+LOG = logging.getLogger('padaos')
 
 class IntentContainer:
     def __init__(self):
@@ -91,12 +95,22 @@ class IntentContainer:
             self.i += 1
         return '^{}$'.format(line)
 
+    def _create_regex(self, line, intent_name):
+        """ Create regex and return. If error occurs returns None. """
+        try:
+            return re.compile(self._create_intent_pattern(line, intent_name),
+                              re.IGNORECASE)
+        except sre_constants.error as e:
+            LOG.warning('Failed to parse the line "{}" '
+                        'for {}'.format(line, intent_name))
+            return None
+            
     def create_regexes(self, lines, intent_name):
-        return [
-            re.compile(self._create_intent_pattern(line, intent_name), re.IGNORECASE)
-            for line in sorted(lines, key=len, reverse=True)
-            if line.strip()
-        ]
+        regexes = [self._create_regex(line, intent_name)
+                  for line in sorted(lines, key=len, reverse=True)
+                  if line.strip()]
+        # Filter out all regexes that fails
+        return [r for r in regexes if r is not None]
 
     def compile(self):
         self.entities = {
