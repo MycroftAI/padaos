@@ -1,6 +1,7 @@
 import re
 import sre_constants
 import logging
+from threading import Lock
 
 
 LOG = logging.getLogger('padaos')
@@ -11,24 +12,29 @@ class IntentContainer:
         self.intents, self.entities = {}, {}
         self.must_compile = True
         self.i = 0
+        self.compile_lock = Lock()
 
     def add_intent(self, name, lines):
-        self.must_compile = True
-        self.intent_lines[name] = lines
+        with self.compile_lock:
+            self.must_compile = True
+            self.intent_lines[name] = lines
 
     def remove_intent(self, name):
-        self.must_compile = True
-        if name in self.intent_lines:
-            del self.intent_lines[name]
+        with self.compile_lock:
+            self.must_compile = True
+            if name in self.intent_lines:
+                del self.intent_lines[name]
 
     def add_entity(self, name, lines):
-        self.must_compile = True
-        self.entity_lines[name] = lines
+        with self.compile_lock:
+            self.must_compile = True
+            self.entity_lines[name] = lines
 
     def remove_entity(self, name):
-        self.must_compile = True
-        if name in self.entity_lines:
-            del self.entity_lines[name]
+        with self.compile_lock:
+            self.must_compile = True
+            if name in self.entity_lines:
+                del self.entity_lines[name]
 
     def _create_pattern(self, line):
         for pat, rep in (
@@ -113,6 +119,10 @@ class IntentContainer:
         return [r for r in regexes if r is not None]
 
     def compile(self):
+        with self.compile_lock:
+            self._compile()
+
+    def _compile(self):
         self.entities = {
             ent_name: r'({})'.format('|'.join(
                 self._create_pattern(line) for line in lines if line.strip()
