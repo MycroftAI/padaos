@@ -45,3 +45,9 @@ class TestIntentContainer:
         self.container.add_intent('test2', ['this has(one|two)options'])
         assert self.container.calc_intent('this has two options')['name'] == 'test2'
         assert self.container.calc_intent('th is is a test')['name'] is None
+
+        self.container.add_intent('test3', ['I see {thing} (in|on) {place}'])
+        assert self.container.calc_intent('I see a bin test')['name'] is None
+        assert self.container.calc_intent('I see a bin in there') == {
+            'name': 'test3', 'entities': {'thing': 'a bin', 'place': 'there'}
+        }

@@ -71,7 +71,7 @@ class IntentContainer:
                 (r'(\\[^\w ])', r'\1?'),
 
                 # === Force 1+ Space Between Words ===
-                (r'(?<=\w)(\\\s|\s)+', r'\\W+'),
+                (r'(?<=(\w|\}))(\\\s|\s)+(?=\S)', r'\\W+'),
 
                 # === Force 0+ Space Between Everything Else ===
                 (r'\s+', r'\\W*'),
