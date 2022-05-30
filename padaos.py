@@ -37,6 +37,7 @@ class IntentContainer:
                 del self.entity_lines[name]
 
     def _create_pattern(self, line):
+        line = line.lower()
         for pat, rep in (
                 # === Preserve Plain Parentheses ===
                 (r'\(([^\|)]*)\)', r'{~(\1)~}'),  # (hi) -> {~(hi)~}
