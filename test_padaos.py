@@ -35,6 +35,12 @@ class TestIntentContainer:
         self.container.add_intent('test', ['Testing cAPitalizAtion'])
         assert self.container.calc_intent('teStiNg CapitalIzation')['name'] == 'test'
 
+        self.container.add_intent('test2', ['test THE {CaSe}'])
+        self.container.compile()
+        intent = self.container.calc_intent('test the cAPitalizAtion')
+        assert intent["name"] == 'test2'
+        assert intent['entities'] == {'case': 'cAPitalizAtion'}
+
     def test_punctuation(self):
         self.container.add_intent('test', ['Test! Of: Punctuation'])
         assert self.container.calc_intent('test of !punctuation...')['name'] == 'test'
